@@ -1,0 +1,73 @@
+import org.gradle.plugins.ide.eclipse.model.*
+
+plugins {
+	id 'java-base'
+	id 'play'
+	id 'eclipse'
+}
+
+configurations {
+	compile
+	testCompile
+	play.extendsFrom(compile)
+	playTest.extendsFrom(testCompile)
+}
+
+repositories {
+	jcenter()
+	maven {
+		name "typesafe-maven-release"
+		url "https://repo.typesafe.com/typesafe/maven-releases"
+	}
+	ivy {
+		name "typesafe-ivy-release"
+		url "https://repo.typesafe.com/typesafe/ivy-releases"
+		layout "ivy"
+	}
+}
+
+def playVersion = '2.4.3'
+
+model {
+	components {
+		play {
+			platform play: playVersion, java: '1.8'
+			injectedRoutesGenerator = true
+			
+			sources {
+				twirlTemplates {
+					source {
+						include "**/*.xml"
+					}
+				}
+			}
+		}
+	}
+}
+
+dependencies {
+	play "com.typesafe.play:play-java-jdbc_2.11:${playVersion}"
+	play "com.typesafe.play:play-cache_2.11:${playVersion}"
+	play "com.typesafe.play:play-java-ws_2.11:${playVersion}"
+	play "com.typesafe.play:play-jdbc-evolutions_2.11:${playVersion}"
+}
+
+eclipse {
+	classpath {
+		plusConfigurations += [ configurations.play ]
+				
+		file {
+			beforeMerged { classpath ->
+				classpath.entries += [
+					new SourceFolder("app", null), 
+					new SourceFolder("build/playBinary/src/compilePlayBinaryRoutes", null),
+					new SourceFolder("build/playBinary/src/compilePlayBinaryTwirlTemplates", null)
+				]
+			}
+		}
+	}
+	
+	it.project {
+		natures 'org.scala-ide.sdt.core.scalanature', 'org.eclipse.jdt.core.javanature'
+	}
+}
